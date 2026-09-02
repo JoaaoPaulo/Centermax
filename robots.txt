@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://joaaopaulo.github.io/DonChacon/sitemap.xml

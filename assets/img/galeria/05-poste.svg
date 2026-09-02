@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500" preserveAspectRatio="xMidYMid slice">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#15181a"/><stop offset="1" stop-color="#0b0c0d"/>
+</linearGradient>
+<radialGradient id="vig" cx="50%" cy="42%" r="78%">
+<stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".62"/>
+</radialGradient>
+<pattern id="stripe" width="46" height="46" patternTransform="rotate(38)" patternUnits="userSpaceOnUse">
+<rect width="46" height="46" fill="none"/><rect width="16" height="46" fill="#e6c766" opacity=".05"/>
+</pattern>
+<filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3"/>
+<feColorMatrix type="saturate" values="0"/></filter>
+</defs>
+<rect width="1200" height="1500" fill="url(#bg)"/>
+<rect width="1200" height="1500" fill="url(#stripe)"/>
+<g transform="translate(90.0 222.41379310344826) scale(1.7586206896551724)" opacity=".30"><g fill="none" stroke="#e6c766" stroke-width="6" stroke-linecap="round"><rect x="238" y="130" width="104" height="330" rx="52"/><path d="M238 470 h104"/><path d="M244 180 l92 -44" opacity=".85"/><path d="M244 232 l92 -44" opacity=".85"/><path d="M244 284 l92 -44" opacity=".85"/><path d="M244 336 l92 -44" opacity=".85"/><path d="M244 388 l92 -44" opacity=".85"/></g></g>
+<rect width="1200" height="1500" fill="url(#vig)"/>
+<rect width="1200" height="1500" filter="url(#grain)" opacity=".12"/>
+<rect x="72.0" y="67.5" width="1056.0" height="1365.0" fill="none" stroke="#e6c766" stroke-opacity=".22" stroke-width="2"/>
+</svg>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1280" preserveAspectRatio="xMidYMid slice">
+<defs>
+<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#12161a"/><stop offset="1" stop-color="#0b0d0f"/>
+</linearGradient>
+<radialGradient id="vig" cx="50%" cy="42%" r="78%">
+<stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".62"/>
+</radialGradient>
+<pattern id="stripe" width="46" height="46" patternTransform="rotate(38)" patternUnits="userSpaceOnUse">
+<rect width="46" height="46" fill="none"/><rect width="16" height="46" fill="#e6c766" opacity=".05"/>
+</pattern>
+<filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3"/>
+<feColorMatrix type="saturate" values="0"/></filter>
+</defs>
+<rect width="1920" height="1280" fill="url(#bg)"/>
+<rect width="1920" height="1280" fill="url(#stripe)"/>
+<g transform="translate(704 -124) scale(2.026)" opacity=".13"><g stroke="#e6c766" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M120 300 L470 150 a26 26 0 0 1 22 40 L150 348 z"/><path d="M150 348 l-46 26 a22 22 0 0 0 8 40 l60 -30"/></g></g>
+<rect width="1920" height="1280" fill="url(#vig)"/>
+<rect width="1920" height="1280" filter="url(#grain)" opacity=".12"/>
+</svg>
