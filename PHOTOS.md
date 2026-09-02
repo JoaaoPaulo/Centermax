@@ -81,3 +81,23 @@ Don Chacon**, substitua:
 
 O nome "Don Chacon / Barber Club" no cabeçalho é texto, não imagem — ele fica
 nítido em qualquer tela e você muda direto no `index.html`.
+
+---
+
+## Atalho: importar tudo automaticamente do Google
+
+O script `scripts/importar-google.py` puxa as fotos, a fachada em Street View e
+as avaliações de 5 estrelas direto da API do Google, e já reescreve o
+`assets/js/data.js` sozinho.
+
+```bash
+export GOOGLE_MAPS_API_KEY="sua-chave"
+python3 scripts/importar-google.py
+```
+
+Para gerar a chave: acesse o [Google Cloud Console](https://console.cloud.google.com/),
+crie um projeto, ative **Places API (New)** e **Street View Static API** em
+*APIs e serviços → Biblioteca*, e crie uma chave em *Credenciais*. O uso desse
+volume cabe no crédito mensal gratuito.
+
+Depois de rodar, confira o site e apague os arquivos `.svg` de placeholder que sobrarem.

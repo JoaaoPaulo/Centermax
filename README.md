@@ -38,6 +38,9 @@ fotos reais. Veja o passo a passo detalhado em **[PHOTOS.md](PHOTOS.md)**.
 
 Resumo: jogue os arquivos em `assets/img/galeria/` e liste em `window.DC_GALERIA`.
 
+Se preferir, o script `scripts/importar-google.py` faz isso sozinho a partir de
+uma chave da API do Google. Instruções no fim do `PHOTOS.md`.
+
 ### 2. Adicionar avaliações do Google
 
 Em `assets/js/data.js`, no array `window.DC_AVALIACOES`. Use **somente avaliações
@@ -72,6 +75,7 @@ assets/
   img/logo-mark.svg        emblema (navalhas cruzadas)
   img/hero/                fundos do topo
   img/galeria/             fotos da galeria
+scripts/importar-google.py importa fotos e avaliações do Google Maps
 .github/workflows/deploy.yml
 ```
 
