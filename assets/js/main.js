@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Don Chacon Barber Club — interações
+   Centermax Odontologia — interações
    ========================================================================== */
 (function () {
   'use strict';
@@ -65,42 +65,14 @@
     revealables.forEach(function (el) { revObs.observe(el); });
   }
 
-  /* ---------------- hero: slideshow de fundo ---------------- */
-  (function heroSlides() {
-    var box  = $('#heroBg'), dots = $('#heroDots');
-    var imgs = window.DC_HERO || [];
-    if (!box || !imgs.length) return;
-
-    var slides = imgs.map(function (src, i) {
-      var d = document.createElement('div');
-      d.className = 'slide' + (i === 0 ? ' on' : '');
-      d.style.backgroundImage = 'url("' + src + '")';
-      box.appendChild(d);
-
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.setAttribute('role', 'tab');
-      b.setAttribute('aria-selected', String(i === 0));
-      b.setAttribute('aria-label', 'Imagem ' + (i + 1));
-      b.addEventListener('click', function () { go(i); });
-      dots.appendChild(b);
-      return d;
+  /* ---------------- perguntas frequentes: uma aberta por vez ---------------- */
+  var faqs = $$('.faq details');
+  faqs.forEach(function (d) {
+    d.addEventListener('toggle', function () {
+      if (!d.open) return;
+      faqs.forEach(function (o) { if (o !== d) o.open = false; });
     });
-
-    var cur = 0, timer;
-    function go(n) {
-      cur = (n + slides.length) % slides.length;
-      slides.forEach(function (s, i) { s.classList.toggle('on', i === cur); });
-      $$('button', dots).forEach(function (b, i) { b.setAttribute('aria-selected', String(i === cur)); });
-      restart();
-    }
-    function restart() {
-      clearInterval(timer);
-      if (!reduced && slides.length > 1) timer = setInterval(function () { go(cur + 1); }, 6500);
-    }
-    if (slides.length < 2) dots.style.display = 'none';
-    restart();
-  })();
+  });
 
   /* ---------------- carrossel genérico ---------------- */
   function makeCarousel(track, dotsBox, opts) {
@@ -243,12 +215,20 @@
     return { build: build, sync: sync, step: step, go: scrollToIndex, play: play, stop: stop };
   }
 
+  /* Some com a seção inteira quando a lista de dados está vazia. É o que
+     mantém galeria e avaliações fora do ar até alguém preencher o data.js. */
+  function escondeSecao(el) {
+    var sec = el && el.closest('.sec');
+    if (sec) sec.hidden = true;
+  }
+
   /* ---------------- galeria ---------------- */
   var galApi = null;
   (function galeria() {
     var track = $('#galTrack'), dotsBox = $('#galDots');
-    var fotos = window.DC_GALERIA || [];
-    if (!track || !fotos.length) return;
+    var fotos = window.CM_GALERIA || [];
+    if (!track) return;
+    if (!fotos.length) { escondeSecao(track); return; }
 
     fotos.forEach(function (f, i) {
       var fig = document.createElement('figure');
@@ -259,14 +239,14 @@
       fig.setAttribute('aria-label', 'Ampliar: ' + (f.alt || 'foto'));
       var img = document.createElement('img');
       img.src = f.src;
-      img.alt = f.alt || 'Foto da Barbearia Don Chacon';
+      img.alt = f.alt || 'Foto da Centermax Odontologia';
       img.loading = i < 2 ? 'eager' : 'lazy';
       img.decoding = 'async';
       fig.appendChild(img);
       track.appendChild(fig);
     });
 
-    galApi = makeCarousel(track, dotsBox, { autoplay: 4200 });
+    galApi = makeCarousel(track, dotsBox, { autoplay: 4600 });
     galApi.build();
     galApi.sync();
     galApi.play();
@@ -321,17 +301,13 @@
   var depoApi = null;
   (function depoimentos() {
     var track = $('#depoTrack'), dotsBox = $('#depoDots');
-    var avs = window.DC_AVALIACOES || [];
+    var avs = window.CM_AVALIACOES || [];
     if (!track) return;
-
-    if (!avs.length) {
-      track.closest('.sec').hidden = true;
-      return;
-    }
+    if (!avs.length) { escondeSecao(track); return; }
 
     avs.forEach(function (a) {
       var nome = (a.nome || '').trim();
-      var inicial = nome ? nome.trim().charAt(0).toUpperCase() : '★';
+      var inicial = nome ? nome.charAt(0).toUpperCase() : '★';
 
       var art = document.createElement('article');
       art.className = 'quote';
@@ -349,7 +325,7 @@
       track.appendChild(art);
     });
 
-    var api = depoApi = makeCarousel(track, dotsBox, { autoplay: 6500, pausaNoHover: true });
+    var api = depoApi = makeCarousel(track, dotsBox, { autoplay: 6800, pausaNoHover: true });
     api.build();
     api.sync();
     api.play();

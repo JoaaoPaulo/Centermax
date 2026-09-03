@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Importa dados reais do Google Maps para a landing page da Don Chacon.
+Importa dados reais do Google Maps para o site da Centermax Odontologia.
 
 O que ele traz:
   - avaliações (mantém somente as de 5 estrelas) -> assets/js/data.js
   - fotos do perfil do Google                     -> assets/img/galeria/
-  - fachada em Street View                        -> assets/img/hero/
+  - fachada em Street View                        -> assets/img/galeria/
 
 Como usar:
     export GOOGLE_MAPS_API_KEY="sua-chave"
@@ -26,12 +26,11 @@ import urllib.request
 
 RAIZ      = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GALERIA   = os.path.join(RAIZ, "assets", "img", "galeria")
-HERO      = os.path.join(RAIZ, "assets", "img", "hero")
 DATA_JS   = os.path.join(RAIZ, "assets", "js", "data.js")
 
-# Barbearia Don Chacon — Av. Cerro Azul, 1990, Maringá/PR
-CID_A, CID_B = 0x94ECD1C3ED1D432B, 0xECA9292C4CBAAE7D
-LAT, LNG     = -23.4446587, -51.9328383
+# Centermax Odontologia — Av. Mandacaru, 1799, Lj 02, Maringá/PR
+CID_A, CID_B = 0x94ECD6D5F78FC96B, 0x189082830B41A659
+LAT, LNG     = -23.3998976, -51.9568101
 MAX_FOTOS    = 12
 
 
@@ -90,7 +89,7 @@ def baixar_fotos(lugar, chave):
 
 
 def baixar_streetview(chave):
-    """Fachada em Street View. Sai direto de maps.googleapis.com, sem redirecionamento."""
+    """Fachada em Street View, para entrar na galeria junto com as fotos do perfil."""
     salvos = []
     for i, heading in enumerate((0, 90, 180, 270), 1):
         url = ("https://maps.googleapis.com/maps/api/streetview"
@@ -103,30 +102,23 @@ def baixar_streetview(chave):
             continue
         if not dados.startswith(b"\xff\xd8"):
             continue
-        arq = os.path.join(HERO, "fachada-%d.jpg" % i)
-        salvar(arq, dados)
-        salvos.append("assets/img/hero/fachada-%d.jpg" % i)
+        nome = "fachada-%d.jpg" % i
+        salvar(os.path.join(GALERIA, nome), dados)
+        salvos.append(("assets/img/galeria/" + nome,
+                       "Fachada da Centermax Odontologia na Av. Mandacaru, em Maringá"))
         print("  street view %03d graus salvo (%d KB)" % (heading, len(dados) // 1024))
     return salvos
 
 
-def js_lista(itens, indent="  "):
-    return "\n".join(indent + json.dumps(i, ensure_ascii=False) + "," for i in itens).rstrip(",")
-
-
-def escrever_data_js(fotos, heros, avaliacoes):
+def escrever_data_js(fotos, avaliacoes):
     fonte = open(DATA_JS, encoding="utf-8").read()
 
     if fotos:
-        bloco = "window.DC_GALERIA = [\n" + "\n".join(
+        bloco = "window.CM_GALERIA = [\n" + "\n".join(
             "  { src: %s, alt: %s }," % (json.dumps(src, ensure_ascii=False),
-                                         json.dumps(alt or "Barbearia Don Chacon, Maringá", ensure_ascii=False))
+                                         json.dumps(alt or "Centermax Odontologia, Maringá", ensure_ascii=False))
             for src, alt in fotos).rstrip(",") + "\n];"
-        fonte = re.sub(r"window\.DC_GALERIA = \[.*?\];", bloco, fonte, flags=re.S)
-
-    if heros:
-        bloco = "window.DC_HERO = [\n" + js_lista(heros) + "\n];"
-        fonte = re.sub(r"window\.DC_HERO = \[.*?\];", bloco, fonte, flags=re.S)
+        fonte = re.sub(r"window\.CM_GALERIA = \[.*?\];", bloco, fonte, flags=re.S)
 
     if avaliacoes:
         linhas = []
@@ -139,8 +131,8 @@ def escrever_data_js(fotos, heros, avaliacoes):
                 "  }," % (json.dumps(a["nome"], ensure_ascii=False),
                           json.dumps(a["data"], ensure_ascii=False),
                           json.dumps(a["texto"], ensure_ascii=False)))
-        bloco = "window.DC_AVALIACOES = [\n" + "\n".join(linhas).rstrip(",") + "\n];"
-        fonte = re.sub(r"window\.DC_AVALIACOES = \[.*?\];", bloco, fonte, flags=re.S)
+        bloco = "window.CM_AVALIACOES = [\n" + "\n".join(linhas).rstrip(",") + "\n];"
+        fonte = re.sub(r"window\.CM_AVALIACOES = \[.*?\];", bloco, fonte, flags=re.S)
 
     open(DATA_JS, "w", encoding="utf-8").write(fonte)
 
@@ -182,11 +174,11 @@ def main():
         print("  nenhuma foto do perfil baixada")
 
     print("\nStreet View:")
-    heros = baixar_streetview(chave)
+    fotos += baixar_streetview(chave)
 
-    escrever_data_js(fotos, heros, avaliacoes)
+    escrever_data_js(fotos, avaliacoes)
     print("\nassets/js/data.js atualizado.")
-    print("Confira o site e apague os arquivos .svg de placeholder que sobraram.")
+    print("Confira o site e apague as fotos que não quiser exibir.")
 
 
 if __name__ == "__main__":

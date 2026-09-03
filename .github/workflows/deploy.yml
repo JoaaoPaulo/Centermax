@@ -2,7 +2,7 @@ name: Deploy GitHub Pages
 
 on:
   push:
-    branches: [main, claude/don-chacon-landing-page-yo6pp6]
+    branches: [main, claude/centermax-odontologia-site-ela41i]
   workflow_dispatch:
 
 permissions:

@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://joaaopaulo.github.io/DonChacon/sitemap.xml
+Sitemap: https://don-chacon-5rph.vercel.app/sitemap.xml
