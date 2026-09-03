@@ -1,51 +1,53 @@
 /* ==========================================================================
-   Don Chacon Barber Club — dados editáveis do site
-   Altere apenas este arquivo para trocar fotos e avaliações.
+   Don Chacon Barber Club — dados do site
+   Fotos e avaliações vindas do perfil da barbearia no Google Maps.
+   Para trocar qualquer coisa, edite apenas este arquivo.
    ========================================================================== */
 
-/* --------------------------------------------------------------------------
-   1) GALERIA
-   Coloque as fotos em assets/img/galeria/ e liste aqui.
-   Formatos aceitos: .jpg .webp .png .svg
-   Recomendado: 1200x1500px (retrato) ou 1600x1200 (paisagem), até ~300 KB.
-   -------------------------------------------------------------------------- */
+/* GALERIA — arquivos em assets/img/galeria/ */
 window.DC_GALERIA = [
-  { src: 'assets/img/galeria/01-navalha.svg',  alt: 'Navalha e acabamento na Don Chacon Barber Club' },
-  { src: 'assets/img/galeria/02-tesoura.svg',  alt: 'Corte na tesoura, Barbearia Don Chacon Maringá' },
-  { src: 'assets/img/galeria/03-pente.svg',    alt: 'Finalização e styling masculino' },
-  { src: 'assets/img/galeria/04-cadeira.svg',  alt: 'Cadeira de barbeiro clássica no salão' },
-  { src: 'assets/img/galeria/05-poste.svg',    alt: 'Poste de barbearia, fachada Don Chacon' },
-  { src: 'assets/img/galeria/06-frasco.svg',   alt: 'Produtos e cosméticos masculinos' },
-  { src: 'assets/img/galeria/07-maquina.svg',  alt: 'Máquina e degradê na Don Chacon' },
-  { src: 'assets/img/galeria/08-bigode.svg',   alt: 'Barba desenhada e aparada' }
+  { src: 'assets/img/galeria/salao-cadeira.jpg',        alt: 'Cadeira de barbeiro sobre o piso xadrez da Don Chacon, com parede de tijolo ao fundo' },
+  { src: 'assets/img/galeria/corte-pompadour.jpg',      alt: 'Corte com volume no topo e barba alinhada, feito na Don Chacon' },
+  { src: 'assets/img/galeria/barbeiro-atendimento.jpg', alt: 'Barbeiro atendendo cliente no salão da Don Chacon em Maringá' },
+  { src: 'assets/img/galeria/fachada-dia.jpg',          alt: 'Fachada da Barbearia Don Chacon na Avenida Cerro Azul durante o dia' },
+  { src: 'assets/img/galeria/clientes-mesa.jpg',        alt: 'Clientes reunidos na mesa da área de convivência da barbearia' },
+  { src: 'assets/img/galeria/barba-acabamento.jpg',     alt: 'Acabamento da barba e do contorno da nuca na navalha' },
+  { src: 'assets/img/galeria/equipe.jpg',               alt: 'Dupla de barbeiros da Don Chacon Barber Club' },
+  { src: 'assets/img/galeria/salao-piso-xadrez.jpg',    alt: 'Salão da Don Chacon com piso xadrez preto e branco e vista para a avenida' },
+  { src: 'assets/img/galeria/barba-detalhe.jpg',        alt: 'Barba cheia aparada e desenhada na Don Chacon' },
+  { src: 'assets/img/galeria/estacao-trabalho.jpg',     alt: 'Estação de trabalho do barbeiro com espelho, produtos e cadeira' },
+  { src: 'assets/img/galeria/fachada-placa.jpg',        alt: 'Letreiro Don Chacon Barber Club na fachada da Avenida Cerro Azul' },
+  { src: 'assets/img/galeria/fachada-entrada.jpg',      alt: 'Entrada da Barbearia Don Chacon vista da calçada' }
 ];
 
-/* --------------------------------------------------------------------------
-   2) HERO — imagens de fundo que passam automaticamente
-   -------------------------------------------------------------------------- */
+/* HERO — imagens de fundo do topo */
 window.DC_HERO = [
-  'assets/img/hero/hero-1.svg',
-  'assets/img/hero/hero-2.svg',
-  'assets/img/hero/hero-3.svg'
+  'assets/img/hero/fachada-noite.jpg',
+  'assets/img/hero/fachada-led.jpg',
+  'assets/img/hero/lounge.jpg'
 ];
 
-/* --------------------------------------------------------------------------
-   3) AVALIAÇÕES — somente 5 estrelas, copiadas do Google Maps.
-   Para adicionar: abra o perfil no Google, copie o texto e o nome do autor
-   e cole um novo objeto no formato abaixo. Deixe "nome" vazio ('') se quiser
-   exibir apenas "Avaliação verificada no Google".
-
-     { nome: 'Fulano de Tal', data: 'há 2 meses', texto: 'Texto da avaliação.' },
-   -------------------------------------------------------------------------- */
+/* AVALIAÇÕES — somente 5 estrelas, copiadas do perfil no Google Maps.
+   Para adicionar outra, basta colar um objeto no mesmo formato. */
 window.DC_AVALIACOES = [
   {
-    nome: '',
-    data: '',
-    texto: 'Vim a Maringá para um casamento e precisei dar um trato no visual, fui na Barbearia Don Chacon e fui muito bem atendido. Quem me atendeu foi o Leo (carioca), atencioso do começo ao fim, ótimo papo e o corte ficou excelente.'
+    nome: 'silvio luis',
+    data: 'há 10 meses',
+    texto: 'Sou cliente da barbearia desde 2024. Ambiente limpo e agradável, com cerveja gelada. Trabalho dos barbeiros é impecável, que procuram agradar o cliente em todas as situações. A recepcionista sempre me atendeu muito bem, tanto no agendamento por whats quanto no presencial. Equipe Don Chacon está de parabéns!'
+  },
+  {
+    nome: 'Suliete Tozetty',
+    data: 'há 9 meses',
+    texto: 'Ótimo atendimento, compromisso, ambiente climatizado, cafezinho, tem bebidas também, desde água à destilado, entre tantos outros benefícios e comodidades. Primeira vez que meu esposo corta o cabelo aqui, nota 10!'
+  },
+  {
+    nome: 'Elton Pereira',
+    data: 'há 9 meses',
+    texto: 'Atendimento top, ambiente super acolhedor, os melhores profissionais de Maringá, e ainda rola um uisquinho se você gostar.'
   },
   {
     nome: '',
     data: '',
-    texto: 'Ambiente agradável, ótimos profissionais e atendimento nota dez. Um novo conceito de barber shop em Maringá.'
+    texto: 'Vim a Maringá para um casamento e precisei dar um trato no visual, fui na Barbearia Don Chacon e fui muito bem atendido. Quem me atendeu foi o Leo (carioca), atencioso do começo ao fim, ótimo papo e o corte ficou excelente.'
   }
 ];

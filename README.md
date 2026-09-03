@@ -30,21 +30,18 @@ python3 -m http.server 8000
 
 Quase tudo que muda com o tempo está em **um único arquivo**: `assets/js/data.js`.
 
-### 1. Trocar as fotos
+### 1. Trocar ou acrescentar fotos
 
-As imagens que estão no site agora são **painéis gráficos temporários** feitos na
-identidade da barbearia. Elas seguram o layout, mas o ideal é substituí-las pelas
-fotos reais. Veja o passo a passo detalhado em **[PHOTOS.md](PHOTOS.md)**.
-
-Resumo: jogue os arquivos em `assets/img/galeria/` e liste em `window.DC_GALERIA`.
-
-Se preferir, o script `scripts/importar-google.py` faz isso sozinho a partir de
-uma chave da API do Google. Instruções no fim do `PHOTOS.md`.
+As fotos do site são as do próprio perfil da barbearia no Google Maps, já
+escolhidas e otimizadas. Para acrescentar ou substituir alguma, jogue o arquivo
+em `assets/img/galeria/` e liste em `window.DC_GALERIA`. O passo a passo está em
+**[PHOTOS.md](PHOTOS.md)**.
 
 ### 2. Adicionar avaliações do Google
 
-Em `assets/js/data.js`, no array `window.DC_AVALIACOES`. Use **somente avaliações
-de 5 estrelas**. Cada entrada é assim:
+As quatro avaliações do site vieram do perfil no Google Maps e são reais. Para
+acrescentar outras, edite `window.DC_AVALIACOES` em `assets/js/data.js`. Use
+**somente avaliações de 5 estrelas**. Cada entrada é assim:
 
 ```js
 { nome: 'Fulano de Tal', data: 'há 2 meses', texto: 'Texto exato da avaliação.' },
@@ -58,7 +55,7 @@ O carrossel se ajusta sozinho à quantidade de avaliações.
 Estão direto no `index.html`, cada bloco comentado com o nome da seção
 (`HERO`, `SOBRE`, `SERVIÇOS`, `GALERIA`, `AVALIAÇÕES`, `VISITE`).
 
-Os serviços listados hoje são os padrões de uma barber shop e **não têm preços**.
+Os serviços listados são os padrões de uma barber shop e **não têm preços**.
 Se quiser exibir a tabela de valores, é só acrescentar dentro de cada `<article class="card">`.
 
 ---
@@ -72,7 +69,8 @@ assets/
   css/styles.css           identidade visual, layout e responsividade
   js/data.js               ← fotos e avaliações (edite aqui)
   js/main.js               carrosséis, lightbox, menu, animações
-  img/logo-mark.svg        emblema (navalhas cruzadas)
+  img/logo-mark.svg        emblema oficial, vetorizado
+  img/logo-original.jpg    logo original do Google, para referência
   img/hero/                fundos do topo
   img/galeria/             fotos da galeria
 scripts/importar-google.py importa fotos e avaliações do Google Maps
@@ -84,7 +82,8 @@ scripts/importar-google.py importa fotos e avaliações do Google Maps
 - Topo com slideshow de fundo, efeito Ken Burns e navegação por pontos
 - Menu fixo que muda de fundo ao rolar, com versão mobile em drawer
 - Faixa de destaques (nota, ano de fundação, dias de funcionamento, endereço)
-- Seção institucional com colagem de imagens e selo *Est. 2018*
+- Seção institucional com colagem de fotos reais e selo *Est. 2018*
+- Faixas em xadrez preto e branco, o mesmo piso do salão
 - Grade de 8 serviços
 - Carrossel de galeria com arraste, setas, pontos e lightbox com teclado
 - Carrossel de avaliações 5 estrelas com autoplay que pausa no hover
