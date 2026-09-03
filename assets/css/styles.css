@@ -411,3 +411,57 @@ body.no-scroll{overflow:hidden}
 }
 /* galeria com fotos maiores */
 .gal{flex:0 0 clamp(260px,36vw,400px)}
+
+/* ---------- emblema embutido: herda a cor do texto ---------- */
+.brand__mark,.cta__mark,.ft__mark{display:block;color:var(--cream)}
+.brand__mark{width:42px;height:42px}
+.cta__mark{width:66px;height:66px;opacity:.92}
+.ft__mark{width:50px;height:50px;flex:none}
+
+/* ---------- serviços: cada bloco vira preto ao passar o mouse ---------- */
+.servicos .card{position:relative;overflow:hidden;transition:transform .45s var(--ease)}
+.servicos .card>*{position:relative;z-index:1}
+.servicos .card::before{
+  content:'';position:absolute;inset:0;z-index:0;background:#0a0a0a;
+  transform:translateY(100%);transition:transform .55s var(--ease);
+}
+.servicos .card h3{position:relative;display:inline-block;padding-bottom:9px}
+.servicos .card h3::after{
+  content:'';position:absolute;left:0;bottom:0;width:0;height:1px;
+  background:currentColor;transition:width .55s var(--ease) .1s;
+}
+.servicos .card__ico{transition:transform .5s var(--ease),border-color .4s,background .4s,color .4s}
+
+@media(hover:hover){
+  .servicos .card:hover{transform:translateY(-6px)}
+  .servicos .card:hover::before{transform:translateY(0)}
+  .servicos .card:hover,
+  .servicos .card:hover h3{color:var(--cream)}
+  .servicos .card:hover p{color:#b7b6b2}
+  .servicos .card:hover h3::after{width:100%}
+  .servicos .card:hover .card__ico{
+    border-color:rgba(255,255,255,.55);color:#fff;background:transparent;
+    transform:rotate(-10deg) scale(1.08);
+  }
+}
+/* no toque, o mesmo efeito acontece ao tocar */
+.servicos .card:active::before{transform:translateY(0)}
+.servicos .card:active,.servicos .card:active h3{color:var(--cream)}
+.servicos .card:active p{color:#b7b6b2}
+.servicos .card:active .card__ico{border-color:rgba(255,255,255,.55);color:#fff}
+
+@media(prefers-reduced-motion:reduce){
+  .servicos .card::before{transition:none}
+}
+
+/* entrada de cada bloco: o ícone gira e cresce quando o cartão aparece */
+@keyframes icoEntra{
+  from{transform:scale(.72) rotate(-16deg);opacity:.15}
+  to{transform:none;opacity:1}
+}
+@keyframes ruleEntra{from{width:0}60%{width:100%}to{width:0}}
+.servicos .card.in:not(:hover):not(:active) .card__ico{animation:icoEntra .7s var(--ease) both}
+.servicos .card.in:not(:hover):not(:active) h3::after{animation:ruleEntra 1.5s var(--ease) .25s}
+@media(prefers-reduced-motion:reduce){
+  .servicos .card.in .card__ico,.servicos .card.in h3::after{animation:none}
+}

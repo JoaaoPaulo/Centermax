@@ -227,12 +227,13 @@
       track.appendChild(fig);
     });
 
-    galApi = makeCarousel(track, dotsBox);
+    galApi = makeCarousel(track, dotsBox, { autoplay: 4200 });
     galApi.build();
     galApi.sync();
+    galApi.play();
 
     $$('[data-gal]').forEach(function (b) {
-      b.addEventListener('click', function () { galApi.step(b.dataset.gal === 'next' ? 1 : -1); });
+      b.addEventListener('click', function () { galApi.stop(); galApi.step(b.dataset.gal === 'next' ? 1 : -1); galApi.play(); });
     });
 
     /* lightbox */
@@ -244,12 +245,14 @@
       lbImg.src = fotos[idx].src;
       lbImg.alt = fotos[idx].alt || '';
       lastFocus = document.activeElement;
+      galApi.stop();
       lb.hidden = false;
       document.body.classList.add('no-scroll');
       $('#lbClose').focus();
     }
     function close() {
       lb.hidden = true;
+      galApi.play();
       document.body.classList.remove('no-scroll');
       if (lastFocus) lastFocus.focus();
     }
