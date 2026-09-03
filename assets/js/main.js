@@ -147,9 +147,22 @@
     }
 
     function step(dir) {
-      var n = currentIndex() + dir;
       var len = items().length;
-      scrollToIndex((n + len) % len);
+      if (!len) return;
+      var max = track.scrollWidth - track.clientWidth;
+
+      /* No fim da faixa o último item não chega a ficar centralizado, então o
+         índice calculado pela posição para de avançar e o carrossel trava.
+         Chegando ao limite da rolagem, volta para o começo. */
+      if (dir > 0 && track.scrollLeft >= max - 2) { scrollToIndex(0); return; }
+      if (dir < 0 && track.scrollLeft <= 2) { scrollToIndex(len - 1); return; }
+
+      var antes = track.scrollLeft;
+      scrollToIndex((currentIndex() + dir + len) % len);
+
+      if (dir > 0) setTimeout(function () {
+        if (Math.abs(track.scrollLeft - antes) < 2 && track.scrollLeft >= max - 2) scrollToIndex(0);
+      }, 500);
     }
 
     var raf;
@@ -186,19 +199,45 @@
     });
     track.addEventListener('click', function (e) { if (moved) { e.preventDefault(); e.stopPropagation(); } }, true);
 
-    /* autoplay opcional */
-    var auto;
-    function play() {
-      if (reduced || !opts.autoplay || items().length < 2) return;
-      stop();
-      auto = setInterval(function () { step(1); }, opts.autoplay);
+    /* Autoplay com rede de segurança.
+       Em vez de ligar e desligar o cronômetro a cada evento, o estado desejado é
+       recalculado por sincronizaAuto e conferido de tempos em tempos. Assim, se
+       algum evento de mouse se perder, o carrossel volta a girar sozinho. */
+    var auto = null, sobreItem = false, pausaExterna = false;
+
+    function deveRodar() {
+      return !reduced && !!opts.autoplay && items().length > 1 &&
+             !document.hidden && !sobreItem && !pausaExterna;
     }
-    function stop() { clearInterval(auto); }
+    function sincronizaAuto() {
+      if (deveRodar()) {
+        if (!auto) auto = setInterval(function () { step(1); }, opts.autoplay);
+      } else {
+        clearInterval(auto);
+        auto = null;
+      }
+    }
+    function play() { pausaExterna = false; sincronizaAuto(); }
+    function stop() { pausaExterna = true;  sincronizaAuto(); }
+
     if (opts.autoplay) {
-      track.addEventListener('pointerenter', stop);
-      track.addEventListener('pointerleave', play);
-      track.addEventListener('focusin', stop);
-      document.addEventListener('visibilitychange', function () { document.hidden ? stop() : play(); });
+      /* Pausar ao passar o mouse só faz sentido onde há texto para ler. Na
+         galeria a faixa ocupa a largura toda da página, e pausar ali deixaria o
+         carrossel parado quase sempre. */
+      if (opts.pausaNoHover) {
+        track.addEventListener('mouseover', function (e) {
+          if (e.target.closest && e.target.closest('.gal, .quote')) { sobreItem = true; sincronizaAuto(); }
+        });
+        track.addEventListener('mouseout', function (e) {
+          if (!e.relatedTarget || !track.contains(e.relatedTarget)) { sobreItem = false; sincronizaAuto(); }
+        });
+        track.addEventListener('mouseleave', function () { sobreItem = false; sincronizaAuto(); });
+      }
+      track.addEventListener('focusin',  function () { sobreItem = true;  sincronizaAuto(); });
+      track.addEventListener('focusout', function () { sobreItem = false; sincronizaAuto(); });
+      document.addEventListener('visibilitychange', sincronizaAuto);
+      setInterval(sincronizaAuto, 1500);
+      sincronizaAuto();
     }
 
     return { build: build, sync: sync, step: step, go: scrollToIndex, play: play, stop: stop };
@@ -252,9 +291,9 @@
     }
     function close() {
       lb.hidden = true;
-      galApi.play();
       document.body.classList.remove('no-scroll');
       if (lastFocus) lastFocus.focus();
+      galApi.play();
     }
 
     track.addEventListener('click', function (e) {
@@ -310,7 +349,7 @@
       track.appendChild(art);
     });
 
-    var api = depoApi = makeCarousel(track, dotsBox, { autoplay: 6000 });
+    var api = depoApi = makeCarousel(track, dotsBox, { autoplay: 6500, pausaNoHover: true });
     api.build();
     api.sync();
     api.play();

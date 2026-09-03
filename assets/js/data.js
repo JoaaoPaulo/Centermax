@@ -4,31 +4,28 @@
    Para trocar qualquer coisa, edite apenas este arquivo.
    ========================================================================== */
 
-/* GALERIA — arquivos em assets/img/galeria/ */
+/* GALERIA — oito cenas diferentes, sem fotos parecidas entre si */
 window.DC_GALERIA = [
   { src: 'assets/img/galeria/salao-cadeira.jpg',        alt: 'Cadeira de barbeiro sobre o piso xadrez da Don Chacon, com parede de tijolo ao fundo' },
   { src: 'assets/img/galeria/corte-pompadour.jpg',      alt: 'Corte com volume no topo e barba alinhada, feito na Don Chacon' },
   { src: 'assets/img/galeria/barbeiro-atendimento.jpg', alt: 'Barbeiro atendendo cliente no salão da Don Chacon em Maringá' },
-  { src: 'assets/img/galeria/fachada-dia.jpg',          alt: 'Fachada da Barbearia Don Chacon na Avenida Cerro Azul durante o dia' },
-  { src: 'assets/img/galeria/clientes-mesa.jpg',        alt: 'Clientes reunidos na mesa da área de convivência da barbearia' },
   { src: 'assets/img/galeria/barba-acabamento.jpg',     alt: 'Acabamento da barba e do contorno da nuca na navalha' },
   { src: 'assets/img/galeria/equipe.jpg',               alt: 'Dupla de barbeiros da Don Chacon Barber Club' },
   { src: 'assets/img/galeria/salao-piso-xadrez.jpg',    alt: 'Salão da Don Chacon com piso xadrez preto e branco e vista para a avenida' },
-  { src: 'assets/img/galeria/barba-detalhe.jpg',        alt: 'Barba cheia aparada e desenhada na Don Chacon' },
   { src: 'assets/img/galeria/estacao-trabalho.jpg',     alt: 'Estação de trabalho do barbeiro com espelho, produtos e cadeira' },
-  { src: 'assets/img/galeria/fachada-placa.jpg',        alt: 'Letreiro Don Chacon Barber Club na fachada da Avenida Cerro Azul' },
-  { src: 'assets/img/galeria/fachada-entrada.jpg',      alt: 'Entrada da Barbearia Don Chacon vista da calçada' }
+  { src: 'assets/img/galeria/fachada-placa.jpg',        alt: 'Letreiro Don Chacon Barber Club na fachada da Avenida Cerro Azul' }
 ];
 
-/* HERO — imagens de fundo do topo */
+/* HERO — três cenas de fundo do topo */
 window.DC_HERO = [
   'assets/img/hero/fachada-noite.jpg',
-  'assets/img/hero/fachada-led.jpg',
-  'assets/img/hero/lounge.jpg'
+  'assets/img/hero/lounge.jpg',
+  'assets/img/hero/clientes-mesa.jpg'
 ];
 
 /* AVALIAÇÕES — somente 5 estrelas, copiadas do perfil no Google Maps.
-   Para adicionar outra, basta colar um objeto no mesmo formato. */
+   Para acrescentar outra, cole um objeto no mesmo formato.
+   Deixe "nome" e "data" vazios para exibir apenas "Avaliação verificada". */
 window.DC_AVALIACOES = [
   {
     nome: 'silvio luis',
