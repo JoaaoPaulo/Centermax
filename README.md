@@ -3,8 +3,8 @@
 Site da **Centermax Odontologia**, Av. Mandacaru, 1799 — Loja 02, Maringá/PR.
 HTML, CSS e JavaScript puros. Sem build, sem dependências, sem `npm install`.
 
-> O repositório continua se chamando `DonChacon` por causa da publicação já
-> existente na Vercel. Só o conteúdo do site mudou.
+> O projeto começou como `DonChacon` e o repositório agora se chama `Centermax`.
+> A publicação na Vercel ainda usa o endereço antigo, criado naquela época.
 
 **Publicado em:** https://don-chacon-5rph.vercel.app/
 
