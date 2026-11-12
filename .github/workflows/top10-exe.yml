@@ -21,13 +21,12 @@ jobs:
           pyinstaller --onefile --distpath executavel servidor.py
           pyinstaller --onefile --distpath executavel cliente.py
           Compress-Archive -Force -Path servidor.py,cliente.py,listas.py,palpite.py,README.md,jogar.bat,executavel -DestinationPath ..\Top10_com_executavel.zip
-      - name: Salvar zip no branch entregas
+      - name: Salvar o zip no branch
         shell: bash
         run: |
+          mv Top10_com_executavel.zip top10/
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git checkout --orphan top10-entregas
-          git rm -rq --cached .
-          git add -f Top10_com_executavel.zip
-          git commit -qm "Top10 com executavel"
-          git push -f origin top10-entregas
+          git add -f top10/Top10_com_executavel.zip
+          git commit -qm "Top 10: zip com executavel de Windows"
+          git push origin HEAD:${{ github.ref_name }}
