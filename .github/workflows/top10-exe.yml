@@ -1,0 +1,33 @@
+name: Top 10 - gerar executavel Windows
+on:
+  push:
+    branches: [claude/lucid-pasteur-a2ltql]
+    paths: ["top10/*.py", ".github/workflows/top10-exe.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Gerar exe
+        working-directory: top10
+        run: |
+          pip install pyinstaller
+          pyinstaller --onefile --distpath executavel servidor.py
+          pyinstaller --onefile --distpath executavel cliente.py
+          Compress-Archive -Force -Path servidor.py,cliente.py,listas.py,palpite.py,README.md,jogar.bat,executavel -DestinationPath ..\Top10_com_executavel.zip
+      - name: Salvar zip no branch entregas
+        shell: bash
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git checkout --orphan top10-entregas
+          git rm -rq --cached .
+          git add -f Top10_com_executavel.zip
+          git commit -qm "Top10 com executavel"
+          git push -f origin top10-entregas
