@@ -1,50 +1,50 @@
-TOP 10 - RESPOSTAS DO FORMULARIO
+TOP 10 - RESPOSTAS DO FORMULÁRIO
 
 NOME DOS ALUNOS
-(os nomes de voces dois)
+(os nomes de vocês dois)
 
 NOME DO JOGO
 Top 10
 
-EXPLICACAO SOBRE O JOGO
-Top 10 e um jogo de adivinhar listas para 2 jogadores, cada um no seu terminal. O jogador 1 cria a sala e escolhe uma das 10 listas (por exemplo "As 10 capitais brasileiras mais populosas"), e o jogador 2 entra na sala. Os 10 itens comecam escondidos e os jogadores, um de cada vez, chutam um item. Se acertar, o item aparece para os dois e o jogador ganha a quantidade de pontos igual ao numero do item: o numero 1 e o mais obvio e vale 1 ponto, o numero 10 e o mais dificil e vale 10 pontos. Se errar, passa a vez sem ganhar nada. Tambem da para passar a vez digitando 0. O jogo acaba quando os 10 itens sao encontrados, quando os dois passam a vez seguido ou quando alguem sai, e vence quem tiver mais pontos. As listas sao: paises mais populosos, capitais brasileiras, super-herois, animes, videogames, itens do McDonald's, lendas do folclore, redes sociais, desenhos animados e clubes europeus.
+EXPLICAÇÃO SOBRE O JOGO
+Top 10 é um jogo de adivinhar listas para 2 jogadores, cada um no seu terminal. O jogador 1 cria a sala e escolhe uma das 10 listas (por exemplo, "As 10 capitais brasileiras mais populosas"), e o jogador 2 entra na sala. Os 10 itens começam escondidos e os jogadores, um de cada vez, chutam um item. Se acertar, o item aparece para os dois e o jogador ganha a quantidade de pontos igual ao número do item: o número 1 é o mais óbvio e vale 1 ponto, o número 10 é o mais difícil e vale 10 pontos. Se errar, passa a vez sem ganhar nada. Também dá para passar a vez digitando 0. O jogo acaba quando os 10 itens são encontrados, quando os dois passam a vez seguido ou quando alguém sai, e vence quem tiver mais pontos. As listas são: países mais populosos, capitais brasileiras, super-heróis, animes, videogames, itens do McDonald's, lendas do folclore, redes sociais, desenhos animados e clubes europeus.
 
-LINGUAGEM DE PROGRAMACAO UTILIZADA
+LINGUAGEM DE PROGRAMAÇÃO UTILIZADA
 C, com as bibliotecas winsock2.h (sockets) e pthread.h (threads e mutex).
 
-COMO E QUAIS INFORMACOES SAO TROCADAS ENTRE OS PROCESSOS?
-Cada jogador e um processo. Os dois se comunicam por um socket TCP: o jogador 1 cria a sala (servidor, com bind/listen/accept) e o jogador 2 entra na sala (cliente, com connect). As mensagens sao textos curtos terminados em "\n", com uma notacao propria: o primeiro caractere e o numero do jogador que fez a acao, o segundo e o codigo da acao e o resto e o dado da acao.
+COMO E QUAIS INFORMAÇÕES SÃO TROCADAS ENTRE OS PROCESSOS?
+Cada jogador é um processo. Os dois se comunicam por um socket TCP: o jogador 1 cria a sala (servidor, com bind, listen e accept) e o jogador 2 entra na sala (cliente, com connect). As mensagens são textos curtos terminados em "\n", com uma notação própria: o primeiro caractere é o número do jogador que fez a ação, o segundo é o código da ação e o resto é o dado da ação.
 
 - 1NJoao: o jogador 1 informa o nome dele (Joao).
-- 1L2: o jogador 1 escolheu a lista de numero 2 (capitais brasileiras).
-- 2A3: o jogador 2 acertou o item numero 3 (ganha 3 pontos).
+- 1L2: o jogador 1 escolheu a lista de número 2 (capitais brasileiras).
+- 2A3: o jogador 2 acertou o item número 3 (ganha 3 pontos).
 - 1Earacaju: o jogador 1 chutou "aracaju" e errou.
 - 2P: o jogador 2 passou a vez.
 - 1S: o jogador 1 saiu do jogo.
 
-O controle da vez e feito pela variavel inteira "vez", que existe nos dois processos. Comeca em 1 e, a cada jogada (A, E ou P), os dois processos fazem vez = 3 - jogador, ou seja, a vez passa para o outro. O processo so deixa o jogador digitar quando vez e igual ao numero dele. Como os dois processos aplicam a mesma mensagem na mesma funcao (trata), o estado do jogo (itens achados, pontos e vez) fica igual nos dois.
+O controle da vez é feito pela variável inteira "vez", que existe nos dois processos. Ela começa em 1 e, a cada jogada (A, E ou P), os dois processos fazem vez = 3 - jogador, ou seja, a vez passa para o outro. O processo só deixa o jogador digitar quando "vez" é igual ao número dele. Como os dois processos aplicam a mesma mensagem na mesma função (trata), o estado do jogo (itens achados, pontos e vez) fica igual nos dois.
 
-COMO E FEITO O GERENCIAMENTO DA EXCLUSAO MUTUA?
-Em cada processo existem duas threads que usam a mesma memoria compartilhada, a struct global "j" (vez, lista, itens achados, pontos, nomes e fim de jogo): a thread principal, que le o palpite do jogador, e uma thread criada com pthread_create, que fica recebendo as mensagens do outro jogador pelo socket. Todo acesso a struct e feito entre pthread_mutex_lock e pthread_mutex_unlock (mutex "trava"), entao as duas threads nunca alteram os dados ao mesmo tempo. Enquanto nao e a vez do jogador, a thread principal fica bloqueada em pthread_cond_wait (variavel de condicao "sinal"), sem gastar processamento; quando a thread de recebimento aplica a jogada do outro jogador, ela chama pthread_cond_signal e acorda a thread principal, que mostra o quadro e libera o palpite.
+COMO É FEITO O GERENCIAMENTO DA EXCLUSÃO MÚTUA?
+Em cada processo existem duas threads que usam a mesma memória compartilhada, a struct global "j" (vez, lista, itens achados, pontos, nomes e fim de jogo): a thread principal, que lê o palpite do jogador, e uma thread criada com pthread_create, que fica recebendo as mensagens do outro jogador pelo socket. Todo acesso à struct é feito entre pthread_mutex_lock e pthread_mutex_unlock (mutex "trava"), então as duas threads nunca alteram os dados ao mesmo tempo. Enquanto não é a vez do jogador, a thread principal fica bloqueada em pthread_cond_wait (variável de condição "sinal"), sem gastar processamento; quando a thread de recebimento aplica a jogada do outro jogador, ela chama pthread_cond_signal e acorda a thread principal, que mostra o quadro e libera o palpite.
 
-UPLOAD DO CODIGO COMPACTADO (SEM EXECUTAVEL)
+UPLOAD DO CÓDIGO COMPACTADO (SEM EXECUTÁVEL)
 Top10_sem_executavel.zip
 
-UPLOAD DO CODIGO COMPACTADO (COM EXECUTAVEL)
+UPLOAD DO CÓDIGO COMPACTADO (COM EXECUTÁVEL)
 Top10_com_executavel.zip
 
 LINK PARA GAMEPLAY DO JOGO
-O link do video no YouTube (Nao listado).
+O link do vídeo no YouTube (Não listado).
 
 
 O QUE FALTA FAZER
 
 1. Conferir na planilha se nenhuma outra dupla pegou "Top 10".
-2. Gravar o video: extraia o Top10_com_executavel.zip e abra o top10.exe DUAS vezes (duas janelas).
-   - Janela 1: digite seu nome, depois 1 (Criar sala). Se o Windows perguntar do firewall, clique em Permitir.
-   - Janela 2: digite o nome do outro, depois 2 (Entrar na sala) e Enter no IP.
+2. Gravar o vídeo: extraia o Top10_com_executavel.zip e abra o top10.exe DUAS vezes (duas janelas).
+   - Janela 1: digite seu nome e depois 1 (Criar sala). Se o Windows perguntar sobre o firewall, clique em Permitir.
+   - Janela 2: digite o nome do outro jogador, depois 2 (Entrar na sala) e Enter no IP.
    - Janela 1: escolha a lista (2 = capitais).
-   - Jogue alternando as janelas: sp, rio, aracaju (para mostrar um erro), brasilia, fortaleza, bh, salvador, manaus, curitiba, recife, goiania.
-   - Grave a tela com Win + Alt + R. Uns 60 segundos.
-3. Subir o video no YouTube como "Nao listado" e copiar o link.
-4. So um aluno da dupla envia, no formulario da SUA turma, ate 15/11/2026 as 23:59.
+   - Joguem alternando as janelas: sp, rio, aracaju (para mostrar um erro), brasilia, fortaleza, bh, salvador, manaus, curitiba, recife, goiania.
+   - Grave a tela com Win + Alt + R. Uns 60 segundos bastam.
+3. Subir o vídeo no YouTube como "Não listado" e copiar o link.
+4. Só um aluno da dupla envia, no formulário da SUA turma, até 15/11/2026 às 23:59.
