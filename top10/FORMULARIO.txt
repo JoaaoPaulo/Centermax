@@ -1,55 +1,50 @@
-Top 10 - Respostas do formulário
+TOP 10 - RESPOSTAS DO FORMULARIO
 
-Nome dos alunos
-(os nomes de vocês dois)
+NOME DOS ALUNOS
+(os nomes de voces dois)
 
-Nome do jogo
+NOME DO JOGO
 Top 10
 
-Explicação sobre o jogo
-Top 10 é um jogo de adivinhar listas, jogado em rede pelo terminal por 2 a 8 jogadores. O servidor escolhe uma lista de 10 itens em ordem (por exemplo, "As 10 capitais brasileiras mais populosas") e os itens começam escondidos. Os jogadores, um de cada vez, dão um palpite. Se o palpite estiver na lista, o item aparece para todos e o jogador ganha a quantidade de pontos igual ao número do item: o nº 1 é o mais óbvio e vale 1 ponto, o nº 10 é o mais difícil e vale 10 pontos. Se errar, passa a vez sem pontos; também é possível passar a vez. Palpites repetidos não contam e o jogador tenta de novo. A partida termina quando os 10 itens são encontrados ou quando todos passam a vez seguidos, e vence quem somar mais pontos. O jogo tem 10 listas: países mais populosos, capitais brasileiras, super-heróis, animes, videogames, itens do McDonald's, lendas do folclore, redes sociais, desenhos animados e clubes europeus.
+EXPLICACAO SOBRE O JOGO
+Top 10 e um jogo de adivinhar listas para 2 jogadores, cada um no seu terminal. O jogador 1 cria a sala e escolhe uma das 10 listas (por exemplo "As 10 capitais brasileiras mais populosas"), e o jogador 2 entra na sala. Os 10 itens comecam escondidos e os jogadores, um de cada vez, chutam um item. Se acertar, o item aparece para os dois e o jogador ganha a quantidade de pontos igual ao numero do item: o numero 1 e o mais obvio e vale 1 ponto, o numero 10 e o mais dificil e vale 10 pontos. Se errar, passa a vez sem ganhar nada. Tambem da para passar a vez digitando 0. O jogo acaba quando os 10 itens sao encontrados, quando os dois passam a vez seguido ou quando alguem sai, e vence quem tiver mais pontos. As listas sao: paises mais populosos, capitais brasileiras, super-herois, animes, videogames, itens do McDonald's, lendas do folclore, redes sociais, desenhos animados e clubes europeus.
 
-Linguagem de programação utilizada
-Python 3, com as bibliotecas padrão socket (comunicação) e threading (threads, Lock e Condition).
+LINGUAGEM DE PROGRAMACAO UTILIZADA
+C, com as bibliotecas winsock2.h (sockets) e pthread.h (threads e mutex).
 
-Como e quais informações são trocadas entre os processos?
-A comunicação é feita por socket TCP no modelo cliente/servidor: um processo servidor e um processo cliente para cada jogador. As mensagens são linhas de texto com uma notação própria: CODIGO|campo1|campo2|..., usando ";" para separar itens e "=" para separar valores.
+COMO E QUAIS INFORMACOES SAO TROCADAS ENTRE OS PROCESSOS?
+Cada jogador e um processo. Os dois se comunicam por um socket TCP: o jogador 1 cria a sala (servidor, com bind/listen/accept) e o jogador 2 entra na sala (cliente, com connect). As mensagens sao textos curtos terminados em "\n", com uma notacao propria: o primeiro caractere e o numero do jogador que fez a acao, o segundo e o codigo da acao e o resto e o dado da acao.
 
-Do cliente para o servidor:
-- NOME|Ana: o jogador entra com o nickname.
-- CHUTE|fortaleza: o palpite de quem está na vez.
-- PASSA: o jogador passa a vez.
-- SAIR: o jogador sai da partida.
+- 1NJoao: o jogador 1 informa o nome dele (Joao).
+- 1L2: o jogador 1 escolheu a lista de numero 2 (capitais brasileiras).
+- 2A3: o jogador 2 acertou o item numero 3 (ganha 3 pontos).
+- 1Earacaju: o jogador 1 chutou "aracaju" e errou.
+- 2P: o jogador 2 passou a vez.
+- 1S: o jogador 1 saiu do jogo.
 
-Do servidor para os clientes:
-- BEMVINDO|1|2: informa o número do jogador (1) e quantos jogadores tem a partida (2).
-- LISTA|titulo|fonte|10: a lista da partida.
-- VEZ|2|Beto|1=São Paulo;6=Belo Horizonte: de quem é a vez e os itens já encontrados.
-- ACERTO|2|Beto|4|Fortaleza|1=Ana=3;2=Beto=4: quem acertou, qual item, os pontos e o placar.
-- ERRO|2|Beto|aracaju: o palpite não está na lista.
-- PASSOU|2|Beto: o jogador passou a vez.
-- DENOVO|mensagem: o palpite já tinha sido feito, o mesmo jogador tenta outro.
-- FIM|motivo|lista completa|placar: fim da partida.
+O controle da vez e feito pela variavel inteira "vez", que existe nos dois processos. Comeca em 1 e, a cada jogada (A, E ou P), os dois processos fazem vez = 3 - jogador, ou seja, a vez passa para o outro. O processo so deixa o jogador digitar quando vez e igual ao numero dele. Como os dois processos aplicam a mesma mensagem na mesma funcao (trata), o estado do jogo (itens achados, pontos e vez) fica igual nos dois.
 
-O controle da vez é feito pela variável inteira "vez", que existe nos dois processos: o servidor guarda e passa para o próximo jogador a cada jogada, e cada cliente atualiza a sua cópia quando recebe a mensagem VEZ. O cliente só pede o palpite quando "vez" é igual ao seu número, e o servidor ignora mensagens de quem não está na vez.
+COMO E FEITO O GERENCIAMENTO DA EXCLUSAO MUTUA?
+Em cada processo existem duas threads que usam a mesma memoria compartilhada, a struct global "j" (vez, lista, itens achados, pontos, nomes e fim de jogo): a thread principal, que le o palpite do jogador, e uma thread criada com pthread_create, que fica recebendo as mensagens do outro jogador pelo socket. Todo acesso a struct e feito entre pthread_mutex_lock e pthread_mutex_unlock (mutex "trava"), entao as duas threads nunca alteram os dados ao mesmo tempo. Enquanto nao e a vez do jogador, a thread principal fica bloqueada em pthread_cond_wait (variavel de condicao "sinal"), sem gastar processamento; quando a thread de recebimento aplica a jogada do outro jogador, ela chama pthread_cond_signal e acorda a thread principal, que mostra o quadro e libera o palpite.
 
-Como é feito o gerenciamento da exclusão mútua?
-O servidor cria uma thread para cada jogador conectado, que recebe as mensagens daquele jogador, e a thread principal conduz a partida. Todas essas threads acessam a mesma memória compartilhada: um objeto Estado com a vez, os itens encontrados, os chutes errados, os pontos e a jogada recebida. Todo acesso a essa memória é feito dentro de uma região crítica protegida por um threading.Lock (with estado.lock), garantindo que só uma thread leia ou altere os dados por vez; assim, mensagens de dois jogadores chegando ao mesmo tempo não corrompem o estado. Para a espera, é usada uma threading.Condition: a thread principal dorme em wait_for() até chegar a jogada de quem está na vez (sem espera ocupada, sem gastar CPU), e a thread do jogador grava a jogada na memória compartilhada e acorda a principal com notify_all(). Se um jogador desconectar, a thread dele marca o jogo como encerrado e acorda a principal, que finaliza a partida para todos.
+UPLOAD DO CODIGO COMPACTADO (SEM EXECUTAVEL)
+Top10_sem_executavel.zip
 
-Upload do código compactado (sem executável)
-Arquivo: Top10_sem_executavel.zip (já está pronto, mandei junto).
+UPLOAD DO CODIGO COMPACTADO (COM EXECUTAVEL)
+Top10_com_executavel.zip
 
-Upload do código compactado (com executável)
-Arquivo: Top10_com_executavel.zip (já está pronto, mandei junto).
+LINK PARA GAMEPLAY DO JOGO
+O link do video no YouTube (Nao listado).
 
-Link para gameplay do jogo
-O link do vídeo no YouTube (como "Não listado") ou no Google Drive (com "qualquer pessoa com o link pode ver").
 
----
+O QUE FALTA FAZER
 
-O que falta o senhor fazer
-
-1. Conferir na planilha de indicação se nenhuma outra dupla pegou "Top 10".
-2. Gravar o vídeo de 1 minuto: extraia o Top10_com_executavel.zip e dê dois cliques em jogar.bat. Abrem 3 janelas (servidor e 2 jogadores). Em cada jogador digite um nickname; no servidor digite 2 e Enter (lista das capitais). Jogue alternando as janelas: sp, rio, aracaju (para mostrar um erro), brasilia, fortaleza, bh... Grave a tela com Win + Alt + R.
-3. Subir o vídeo no YouTube como "Não listado" e copiar o link.
-4. Só um aluno da dupla envia, no formulário da SUA turma, até 15/11/2026 às 23:59, com os dois zips e o link.
+1. Conferir na planilha se nenhuma outra dupla pegou "Top 10".
+2. Gravar o video: extraia o Top10_com_executavel.zip e abra o top10.exe DUAS vezes (duas janelas).
+   - Janela 1: digite seu nome, depois 1 (Criar sala). Se o Windows perguntar do firewall, clique em Permitir.
+   - Janela 2: digite o nome do outro, depois 2 (Entrar na sala) e Enter no IP.
+   - Janela 1: escolha a lista (2 = capitais).
+   - Jogue alternando as janelas: sp, rio, aracaju (para mostrar um erro), brasilia, fortaleza, bh, salvador, manaus, curitiba, recife, goiania.
+   - Grave a tela com Win + Alt + R. Uns 60 segundos.
+3. Subir o video no YouTube como "Nao listado" e copiar o link.
+4. So um aluno da dupla envia, no formulario da SUA turma, ate 15/11/2026 as 23:59.
