@@ -2,44 +2,44 @@
 TOP 10 - SERVIDOR
 Trabalho 02 de Sistemas Operacionais: jogo com troca de mensagens e memória compartilhada.
 
-O servidor guarda o ESTADO do jogo numa área de memória compartilhada
-(objeto `Estado`) que é acessada por várias threads ao mesmo tempo:
-  - uma thread por jogador conectado (recebe as mensagens daquele jogador);
-  - a thread principal (conduz as rodadas).
-O acesso a essa memória é protegido por um Lock (exclusão mútua) e uma
-Condition (para a thread principal dormir até todos responderem).
+Como no modo Top 10 do Topzi: sai uma lista de 10 itens em ordem e os jogadores,
+um de cada vez, tentam adivinhar os itens. O número do item é a pontuação
+(o nº 1 é o óbvio e vale 1; o nº 10 é o mais difícil e vale 10).
+
+O ESTADO do jogo fica numa memória compartilhada (objeto `Estado`) usada por
+várias threads ao mesmo tempo:
+  - uma thread por jogador (recebe as mensagens daquele jogador);
+  - a thread principal (controla a vez e o fim da partida).
+O acesso é protegido por um Lock (exclusão mútua) e uma Condition
+(a thread principal dorme até chegar a jogada de quem está na vez).
 
 Uso:  python servidor.py [num_jogadores] [porta]
-      ex.: python servidor.py 3 5000
+      ex.: python servidor.py 2 5000
 """
 import random
 import socket
 import sys
 import threading
 
-from temas import TEMAS
+from listas import LISTAS
+from palpite import acha_item, normalizar
 
 HOST = "0.0.0.0"
-VIDAS_INICIAIS = 5
 
 
 # ----------------------------------------------------------------------
 # MEMÓRIA COMPARTILHADA
 # ----------------------------------------------------------------------
 class Estado:
-    """Dados do jogo que todas as threads enxergam."""
-
     def __init__(self):
-        self.lock = threading.Lock()               # exclusão mútua
-        self.cond = threading.Condition(self.lock)  # espera/aviso entre threads
-        self.jogadores = {}   # id -> {"nome", "sock"}
-        self.vez = 1          # id do capitão da rodada
-        self.rodada = 0
-        self.vidas = VIDAS_INICIAIS
-        self.pontos = 0
-        self.numeros = {}     # id -> número secreto (1..10) da rodada
-        self.respostas = {}   # id -> texto da resposta
-        self.palpite = None   # id -> número chutado pelo capitão
+        self.lock = threading.Lock()                # exclusão mútua
+        self.cond = threading.Condition(self.lock)  # espera / aviso entre threads
+        self.jogadores = {}     # id -> {"nome", "sock", "pontos"}
+        self.vez = 1            # id de quem está jogando agora
+        self.itens = []         # itens da lista ("Nome|apelido|...")
+        self.achados = {}       # índice do item -> id de quem achou
+        self.tentados = set()   # chutes errados já feitos (não pune de novo)
+        self.jogada = None      # ("CHUTE", texto) ou ("PASSA",) vinda de quem está na vez
         self.encerrado = False
 
 
@@ -47,18 +47,15 @@ estado = Estado()
 
 
 # ----------------------------------------------------------------------
-# TROCA DE MENSAGENS
-# Toda mensagem é uma linha de texto:  CODIGO|campo1|campo2|...\n
+# TROCA DE MENSAGENS:  CODIGO|campo1|campo2|...\n
 # ----------------------------------------------------------------------
 def limpar(txt):
-    """Tira os caracteres que quebrariam o protocolo."""
     return txt.replace("|", "/").replace(";", ",").replace("=", "-").replace("\n", " ").strip()
 
 
 def enviar(sock, *campos):
-    msg = "|".join(str(c) for c in campos) + "\n"
     try:
-        sock.sendall(msg.encode("utf-8"))
+        sock.sendall(("|".join(str(c) for c in campos) + "\n").encode("utf-8"))
     except OSError:
         pass
 
@@ -70,159 +67,161 @@ def broadcast(*campos):
         enviar(s, *campos)
 
 
+def nome_item(i):
+    return estado.itens[i].split("|")[0]
+
+
+def placar():
+    with estado.lock:
+        return ";".join(f"{jid}={j['nome']}={j['pontos']}" for jid, j in estado.jogadores.items())
+
+
 # ----------------------------------------------------------------------
-# THREAD DE CADA JOGADOR
+# THREAD DE CADA JOGADOR: só grava a jogada na memória compartilhada
 # ----------------------------------------------------------------------
 def atender(jid, sock):
-    leitor = sock.makefile("r", encoding="utf-8")
     try:
-        for linha in leitor:
-            partes = linha.rstrip("\n").split("|")
-            codigo = partes[0]
-
-            if codigo == "RESP" and len(partes) >= 2:
-                with estado.cond:  # entra na região crítica
-                    if jid != estado.vez and jid not in estado.respostas:
-                        estado.respostas[jid] = limpar(partes[1]) or "(em branco)"
-                        estado.cond.notify_all()
-
-            elif codigo == "PALPITE" and len(partes) >= 2:
-                # formato: PALPITE|2=7;3=4  (jogador=numero)
-                chute = {}
-                for par in partes[1].split(";"):
-                    if "=" in par:
-                        a, b = par.split("=", 1)
-                        if a.isdigit() and b.isdigit():
-                            chute[int(a)] = int(b)
-                with estado.cond:
-                    if jid == estado.vez:
-                        estado.palpite = chute
-                        estado.cond.notify_all()
+        for linha in sock.makefile("r", encoding="utf-8"):
+            p = linha.rstrip("\n").split("|")
+            with estado.cond:                       # região crítica
+                if jid != estado.vez or estado.jogada is not None:
+                    continue                        # não é a vez dele: ignora
+                if p[0] == "CHUTE" and len(p) > 1 and p[1].strip():
+                    estado.jogada = ("CHUTE", limpar(p[1]))
+                elif p[0] == "PASSA":
+                    estado.jogada = ("PASSA",)
+                elif p[0] == "SAIR":
+                    estado.encerrado = True
+                estado.cond.notify_all()            # acorda a thread principal
     except OSError:
         pass
-
-    # jogador caiu: avisa a thread principal para encerrar
     with estado.cond:
-        if not estado.encerrado:
-            estado.encerrado = True
-            estado.cond.notify_all()
+        estado.encerrado = True
+        estado.cond.notify_all()
 
 
 # ----------------------------------------------------------------------
-# LÓGICA DO JOGO (thread principal)
+# PARTIDA (thread principal)
 # ----------------------------------------------------------------------
-def esperar(condicao):
-    """Dorme até a condição ser verdadeira (ou o jogo acabar)."""
+def esperar_jogada():
     with estado.cond:
-        estado.cond.wait_for(lambda: condicao() or estado.encerrado)
-        return not estado.encerrado
+        estado.cond.wait_for(lambda: estado.jogada is not None or estado.encerrado)
+        jogada, estado.jogada = estado.jogada, None
+        return None if estado.encerrado else jogada
 
 
-def jogar_rodada(tema, n):
-    min_txt, max_txt = tema["min"], tema["max"]
-
+def partida(lista):
     with estado.lock:
-        estado.rodada += 1
-        estado.respostas = {}
-        estado.palpite = None
-        outros = [j for j in estado.jogadores if j != estado.vez]
-        sorteio = random.sample(range(1, 11), len(outros))
-        estado.numeros = dict(zip(outros, sorteio))
-        rodada, vez = estado.rodada, estado.vez
-        capitao = estado.jogadores[vez]["nome"]
-
-    # 1) avisa todo mundo de quem é a vez e qual o tema
-    broadcast("RODADA", rodada, vez, capitao, tema["tema"], min_txt, max_txt)
-    # 2) cada jogador recebe seu número secreto (só ele vê)
-    for jid, num in estado.numeros.items():
-        enviar(estado.jogadores[jid]["sock"], "NUM", num)
-
-    # 3) espera todos (menos o capitão) responderem
-    if not esperar(lambda: len(estado.respostas) == len(outros)):
-        return False
-
-    # 4) manda as respostas para todos, embaralhadas
-    with estado.lock:
-        itens = list(estado.respostas.items())
-    random.shuffle(itens)
-    lista = ";".join(f"{jid}={estado.jogadores[jid]['nome']}={txt}" for jid, txt in itens)
-    broadcast("RESPOSTAS", lista)
-
-    # 5) espera o palpite do capitão
-    if not esperar(lambda: estado.palpite is not None):
-        return False
-
-    # 6) confere e pontua
-    detalhes = []
-    with estado.lock:
-        for jid, real in estado.numeros.items():
-            chute = estado.palpite.get(jid, 0)
-            dif = abs(chute - real)
-            if dif == 0:
-                estado.pontos += 3
-                res = "EXATO"
-            elif dif <= 2:
-                estado.pontos += 1
-                res = "PERTO"
-            else:
-                estado.vidas -= 1
-                res = "ERROU"
-            detalhes.append(f"{estado.jogadores[jid]['nome']}={real}={chute}={res}")
-        pontos, vidas = estado.pontos, estado.vidas
-        # passa a vez para o próximo jogador (variável "vez")
+        estado.itens = lista["itens"]
+        estado.achados = {}
+        estado.tentados = set()
         ids = sorted(estado.jogadores)
-        estado.vez = ids[(ids.index(estado.vez) + 1) % len(ids)]
+        estado.vez = random.choice(ids)   # quem começa é sorteado
+        total = len(estado.itens)
 
-    broadcast("RESULTADO", ";".join(detalhes), pontos, vidas)
-    return vidas > 0
+    broadcast("LISTA", lista["titulo"], lista["fonte"], total)
+    passes_seguidos = 0
+    anunciar = True   # avisar todo mundo de quem é a vez?
+
+    while True:
+        with estado.lock:
+            vez = estado.vez
+            nome = estado.jogadores[vez]["nome"]
+            achados = ";".join(f"{i + 1}={nome_item(i)}" for i in sorted(estado.achados))
+        if anunciar:
+            broadcast("VEZ", vez, nome, achados)
+        anunciar = True
+
+        jogada = esperar_jogada()
+        if jogada is None:
+            return "Um jogador saiu da partida."
+
+        if jogada[0] == "PASSA":
+            passes_seguidos += 1
+            broadcast("PASSOU", vez, nome)
+            if passes_seguidos >= len(ids):
+                return "Todo mundo passou a vez."
+        else:
+            texto = jogada[1]
+            with estado.lock:
+                i = acha_item(estado.itens, texto)
+                chave = normalizar(texto)
+                if i is not None and i in estado.achados:
+                    quem = estado.jogadores[estado.achados[i]]["nome"]
+                    aviso = f"\"{nome_item(i)}\" já foi achado por {quem}. Chute outro."
+                elif i is None and chave in estado.tentados:
+                    aviso = f"\"{texto}\" já foi chutado e não está na lista. Chute outro."
+                else:
+                    aviso = None
+            if aviso:  # não conta como jogada: o mesmo jogador tenta de novo
+                enviar(estado.jogadores[vez]["sock"], "DENOVO", aviso)
+                anunciar = False
+                continue
+
+            passes_seguidos = 0
+            if i is not None:  # acertou: o número do item é a pontuação
+                with estado.lock:
+                    estado.achados[i] = vez
+                    estado.jogadores[vez]["pontos"] += i + 1
+                    item = nome_item(i)
+                    acabou = len(estado.achados) == total
+                broadcast("ACERTO", vez, nome, i + 1, item, placar())
+                if acabou:
+                    return "Acharam os 10 itens!"
+            else:
+                with estado.lock:
+                    estado.tentados.add(chave)
+                broadcast("ERRO", vez, nome, texto)
+
+        # passa a vez (variável "vez" circula entre os jogadores)
+        with estado.lock:
+            estado.vez = ids[(ids.index(estado.vez) + 1) % len(ids)]
+
+
+def escolher_lista():
+    print("\nListas:")
+    for i, l in enumerate(LISTAS, 1):
+        print(f"  {i:2}. {l['titulo']}")
+    op = input("Escolha a lista (1-10, Enter = sortear): ").strip()
+    if op.isdigit() and 1 <= int(op) <= len(LISTAS):
+        return LISTAS[int(op) - 1]
+    return random.choice(LISTAS)
 
 
 def main():
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 2
     porta = int(sys.argv[2]) if len(sys.argv) > 2 else 5000
-    if not 2 <= n <= 10:
-        print("Número de jogadores deve ser entre 2 e 10.")
+    if not 2 <= n <= 8:
+        print("Número de jogadores: de 2 a 8.")
         return
 
     srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     srv.bind((HOST, porta))
     srv.listen(n)
-    print(f"[SERVIDOR] Porta {porta}. Esperando {n} jogadores...")
+    print(f"[SERVIDOR] Porta {porta}. Esperando {n} jogador(es)...")
 
     while len(estado.jogadores) < n:
         sock, end = srv.accept()
-        leitor = sock.makefile("r", encoding="utf-8")
-        linha = leitor.readline().rstrip("\n").split("|")
-        nome = limpar(linha[1]) if len(linha) > 1 and linha[0] == "NOME" else "Anônimo"
+        p = sock.makefile("r", encoding="utf-8").readline().rstrip("\n").split("|")
+        nome = (limpar(p[1]) if len(p) > 1 and p[0] == "NOME" else "") or "Jogador"
         with estado.lock:
             jid = len(estado.jogadores) + 1
-            estado.jogadores[jid] = {"nome": nome or f"Jogador{jid}", "sock": sock}
+            estado.jogadores[jid] = {"nome": nome, "sock": sock, "pontos": 0}
         enviar(sock, "BEMVINDO", jid, n)
-        broadcast("MSG", f"{nome} entrou ({len(estado.jogadores)}/{n})")
+        broadcast("MSG", f"{nome} entrou ({jid}/{n})")
         print(f"[SERVIDOR] {nome} conectou de {end[0]} (id {jid})")
         threading.Thread(target=atender, args=(jid, sock), daemon=True).start()
 
-    temas = random.sample(TEMAS, len(TEMAS))
-    for tema in temas:
-        if not jogar_rodada(tema, n):
-            break
+    lista = escolher_lista()
+    print(f"[SERVIDOR] Lista: {lista['titulo']}")
+    motivo = partida(lista)
 
-    with estado.lock:
-        pontos, vidas, motivo = estado.pontos, estado.vidas, estado.encerrado
-    if motivo:
-        broadcast("FIM", pontos, vidas, "Um jogador desconectou.")
-    elif vidas <= 0:
-        broadcast("FIM", pontos, vidas, "Acabaram as vidas!")
-    else:
-        broadcast("FIM", pontos, vidas, "Vocês completaram os 10 temas!")
-    print(f"[SERVIDOR] Fim de jogo. Pontos: {pontos}  Vidas: {vidas}")
-
+    revelada = ";".join(f"{i}={it.split('|')[0]}" for i, it in enumerate(lista["itens"], 1))
+    broadcast("FIM", motivo, revelada, placar())
+    print(f"[SERVIDOR] Fim: {motivo}  Placar: {placar()}")
     for j in estado.jogadores.values():
-        try:
-            j["sock"].close()
-        except OSError:
-            pass
+        j["sock"].close()
     srv.close()
 
 

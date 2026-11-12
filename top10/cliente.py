@@ -1,10 +1,9 @@
 """
 TOP 10 - CLIENTE (jogador)
 
-Cada jogador roda um cliente. O cliente conversa com o servidor por socket,
-trocando mensagens no formato  CODIGO|campo1|campo2|...
-O cliente também guarda a variável "vez" (de quem é a vez de ser capitão),
-atualizada pelas mensagens RODADA vindas do servidor.
+Conversa com o servidor por socket, trocando mensagens  CODIGO|campo1|campo2|...
+Guarda a variável "vez" (de quem é a vez), atualizada pelas mensagens VEZ;
+só pede o palpite quando vez == meu_id.
 
 Uso:  python cliente.py [ip_do_servidor] [porta]
       ex.: python cliente.py 127.0.0.1 5000
@@ -12,85 +11,101 @@ Uso:  python cliente.py [ip_do_servidor] [porta]
 import socket
 import sys
 
-LINHA = "=" * 50
+LINHA = "=" * 56
 
 
 def enviar(sock, *campos):
     sock.sendall(("|".join(str(c) for c in campos) + "\n").encode("utf-8"))
 
 
-def ler_numero(prompt):
+def mostrar_quadro(achados_txt, total):
+    achados = dict(x.split("=", 1) for x in achados_txt.split(";") if x)
+    for n in range(1, total + 1):
+        print(f"  {n:2}. {achados.get(str(n), '?' * 6)}")
+
+
+def mostrar_placar(txt, titulo="Placar"):
+    linhas = [x.split("=") for x in txt.split(";") if x]
+    linhas.sort(key=lambda x: -int(x[2]))
+    print(f"{titulo}: " + "   ".join(f"{nm} {pts} pts" for _, nm, pts in linhas))
+
+
+def pedir_palpite(sock):
+    print("\n>>> SUA VEZ! Digite um palpite (ou /passar, /sair)")
     while True:
-        txt = input(prompt).strip()
-        if txt.isdigit() and 1 <= int(txt) <= 10:
-            return int(txt)
-        print("  Digite um número de 1 a 10.")
+        txt = input("Palpite: ").strip()
+        if txt == "/passar":
+            enviar(sock, "PASSA")
+        elif txt == "/sair":
+            enviar(sock, "SAIR")
+        elif txt:
+            enviar(sock, "CHUTE", txt)
+        else:
+            continue
+        return
 
 
 def main():
     host = sys.argv[1] if len(sys.argv) > 1 else "127.0.0.1"
     porta = int(sys.argv[2]) if len(sys.argv) > 2 else 5000
 
-    nome = input("Seu nome: ").strip() or "Jogador"
+    nome = input("Seu nickname: ").strip() or "Jogador"
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((host, porta))
-    leitor = sock.makefile("r", encoding="utf-8")
     enviar(sock, "NOME", nome)
 
-    meu_id = 0
-    vez = 0  # variável de turno, controlada pelas mensagens
+    meu_id, vez, total = 0, 0, 10
 
-    for linha in leitor:
+    for linha in sock.makefile("r", encoding="utf-8"):
         p = linha.rstrip("\n").split("|")
         cod = p[0]
 
         if cod == "BEMVINDO":
             meu_id = int(p[1])
-            print(f"\nConectado! Você é o jogador {meu_id}. Esperando {p[2]} jogadores...")
+            print(f"\nConectado! Você é o jogador {meu_id}. Esperando {p[2]} jogador(es)...")
 
         elif cod == "MSG":
             print(f"  * {p[1]}")
 
-        elif cod == "RODADA":
-            _, rodada, vez, capitao, tema, mn, mx = p
-            vez = int(vez)
-            print(f"\n{LINHA}\n RODADA {rodada}/10   |   Capitão: {capitao}")
-            print(f" TEMA: {tema}")
-            print(f"   1 = {mn}   ...   10 = {mx}\n{LINHA}")
-            if vez == meu_id:
-                print("Você é o CAPITÃO! Espere as respostas e adivinhe o número de cada um.")
+        elif cod == "LISTA":
+            total = int(p[3])
+            print(f"\n{LINHA}\n TOP {total}: {p[1]}\n Fonte: {p[2]}")
+            print(f" O nº 1 vale 1 ponto ... o nº {total} vale {total} pontos.\n{LINHA}")
 
-        elif cod == "NUM":
-            print(f"\n>>> Seu número secreto é: {p[1]} <<<")
-            resp = input("Sua resposta (de acordo com o seu número): ")
-            enviar(sock, "RESP", resp)
-            print("Resposta enviada. Esperando os outros...")
-
-        elif cod == "RESPOSTAS":
-            itens = [x.split("=", 2) for x in p[1].split(";") if x]
-            print("\nRESPOSTAS:")
-            for jid, nm, txt in itens:
-                print(f"  - {nm}: \"{txt}\"")
+        elif cod == "VEZ":
+            vez = int(p[1])
+            print()
+            mostrar_quadro(p[3], total)
             if vez == meu_id:
-                print("\nCapitão, qual o número (1-10) de cada um?")
-                chutes = []
-                for jid, nm, txt in itens:
-                    n = ler_numero(f"  {nm} (\"{txt}\"): ")
-                    chutes.append(f"{jid}={n}")
-                enviar(sock, "PALPITE", ";".join(chutes))
+                pedir_palpite(sock)
             else:
-                print("Esperando o capitão adivinhar...")
+                print(f"\nVez de {p[2]}...")
 
-        elif cod == "RESULTADO":
-            print("\nRESULTADO:")
-            for item in p[1].split(";"):
-                nm, real, chute, res = item.split("=")
-                print(f"  {nm}: era {real}, capitão chutou {chute}  -> {res}")
-            print(f"Pontos do time: {p[2]}   Vidas: {'<3 ' * int(p[3]) or '0'}")
+        elif cod == "DENOVO":
+            print(f"  ! {p[1]}")
+            pedir_palpite(sock)
+
+        elif cod == "ACERTO":
+            _, jid, nm, pos, item, plac = p
+            quem = "Você" if int(jid) == meu_id else nm
+            print(f"\n  ✔ {quem} acertou o nº {pos}: {item}  (+{pos} pontos)")
+            mostrar_placar(plac)
+
+        elif cod == "ERRO":
+            quem = "Você" if int(p[1]) == meu_id else p[2]
+            print(f"\n  ✘ {quem} chutou \"{p[3]}\": não está na lista.")
+
+        elif cod == "PASSOU":
+            print(f"\n  » {p[2]} passou a vez.")
 
         elif cod == "FIM":
-            print(f"\n{LINHA}\n FIM DE JOGO! {p[3]}")
-            print(f" Pontuação final do time: {p[1]}\n{LINHA}")
+            print(f"\n{LINHA}\n FIM DE JOGO! {p[1]}\n\n A lista completa era:")
+            for item in p[2].split(";"):
+                n, nm = item.split("=", 1)
+                print(f"  {n:>2}. {nm}")
+            print()
+            mostrar_placar(p[3], " RESULTADO")
+            print(LINHA)
             break
 
     sock.close()

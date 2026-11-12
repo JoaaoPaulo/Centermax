@@ -1,81 +1,107 @@
 # Top 10 (terminal) - Trabalho 02 de Sistemas Operacionais
 
-Jogo cooperativo para 2 a 10 jogadores, em Python, com **troca de mensagens via socket**
-e **memória compartilhada protegida por exclusão mútua (Lock/Condition)**.
+O modo **Top 10** do Topzi, em terminal, para jogar em rede (2 a 8 jogadores), feito em **Python**.
 
-## Como jogar
-1. Cada rodada tem um **capitão** (a "vez" passa de jogador em jogador).
-2. Aparece um **tema** com uma escala, ex.: *"Um superpoder" - 1 = totalmente inútil ... 10 = o mais incrível*.
-3. Cada jogador (menos o capitão) recebe um **número secreto de 1 a 10** e escreve uma resposta
-   que combine com o número (se tirou 10, fala "voar"; se tirou 1, fala "espirrar glitter").
-4. O capitão lê as respostas e chuta o número de cada um:
-   - acertou em cheio: **+3 pontos**
-   - errou por 1 ou 2: **+1 ponto**
-   - errou por 3 ou mais: **o time perde 1 vida**
-5. São **10 temas** (10 rodadas). O time começa com 5 vidas; se zerar, acaba o jogo.
+## Como funciona o jogo
+1. O servidor escolhe uma das **10 listas** (ex.: *"As 10 capitais brasileiras mais populosas"*).
+2. Os itens começam escondidos (`??????`). Um jogador de cada vez dá **um palpite**.
+3. Acertou? Ganha **o número do item em pontos** (o nº 1 é o óbvio e vale 1; o nº 10 é o difícil e vale 10).
+   Errou? Passa a vez sem ponto. Também dá para digitar `/passar`.
+4. Chute que já foi achado ou que já foi errado não conta: o jogador chuta de novo.
+5. Acaba quando acham os 10 itens ou quando todo mundo passa a vez seguido. Quem tiver mais pontos vence.
 
-## Como rodar
-Precisa só de Python 3 (sem bibliotecas extras).
+Palpites ignoram acentos, maiúsculas e plural, e aceitam apelidos ("SP", "BH", "Rio").
 
+## Como rodar (só precisa de Python 3)
+Terminal 1 (servidor), para 2 jogadores na porta 5000:
 ```bash
-python servidor.py 3 5000        # 3 jogadores, porta 5000
-python cliente.py 127.0.0.1 5000 # em outro terminal, um por jogador
+python servidor.py 2 5000
 ```
+Terminal 2 e 3 (um por jogador):
+```bash
+python cliente.py 127.0.0.1 5000
+```
+Quando os dois entrarem, o servidor pergunta a lista (1 a 10, ou Enter para sortear).
+Para jogar em PCs diferentes na mesma rede, troque `127.0.0.1` pelo IP do PC do servidor.
 
-Para gerar o executável (item "código com executável" do formulário):
+**Executável** (pedido no formulário):
 ```bash
 pip install pyinstaller
+```
+```bash
 pyinstaller --onefile servidor.py
+```
+```bash
 pyinstaller --onefile cliente.py
 ```
-Os `.exe` ficam na pasta `dist/`.
+Os `.exe` aparecem na pasta `dist/`.
 
 ## Arquivos
 | Arquivo | O que faz |
 |---|---|
-| `servidor.py` | Aceita os jogadores, guarda o estado na memória compartilhada e conduz as rodadas |
-| `cliente.py` | Terminal de cada jogador: mostra o tema, pede resposta/palpite |
-| `temas.py` | Os 10 temas |
+| `servidor.py` | Recebe os jogadores, guarda o jogo na memória compartilhada e controla a vez |
+| `cliente.py` | O terminal de cada jogador |
+| `listas.py` | As 10 listas (tiradas do Topzi) |
+| `palpite.py` | Confere se o palpite está na lista |
 
-## Protocolo de mensagens (notação própria)
+## Notação das mensagens (criada para este jogo)
 Toda mensagem é uma linha de texto: `CODIGO|campo1|campo2|...`
 
-| Direção | Mensagem | Significado |
+| Quem manda | Mensagem | Significado |
 |---|---|---|
-| cliente -> servidor | `NOME\|Ana` | jogador se apresenta |
-| servidor -> cliente | `BEMVINDO\|2\|3` | "você é o jogador 2, a partida tem 3" |
-| servidor -> todos | `RODADA\|1\|2\|Beto\|Um superpoder\|inútil\|incrível` | rodada 1, **vez = 2** (capitão Beto), tema e escala |
-| servidor -> um jogador | `NUM\|7` | número secreto só desse jogador |
-| cliente -> servidor | `RESP\|voar` | resposta do jogador |
-| servidor -> todos | `RESPOSTAS\|1=Ana=voar;3=Caio=ler mentes` | respostas embaralhadas |
-| capitão -> servidor | `PALPITE\|1=8;3=6` | chute: jogador 1 = 8, jogador 3 = 6 |
-| servidor -> todos | `RESULTADO\|Ana=7=8=PERTO;...\|4\|5` | resultado, pontos e vidas |
-| servidor -> todos | `FIM\|15\|0\|Acabaram as vidas!` | fim de jogo |
+| cliente → servidor | `NOME\|Ana` | o jogador entra com o nickname |
+| servidor → cliente | `BEMVINDO\|1\|2` | "você é o jogador 1, a partida tem 2" |
+| servidor → todos | `LISTA\|As 10 capitais...\|IBGE\|10` | a lista da partida |
+| servidor → todos | `VEZ\|2\|Beto\|1=São Paulo;6=Belo Horizonte` | **vez = 2** (Beto) e os itens já achados |
+| cliente → servidor | `CHUTE\|fortaleza` | o palpite de quem está na vez |
+| cliente → servidor | `PASSA` / `SAIR` | passar a vez / sair |
+| servidor → todos | `ACERTO\|2\|Beto\|4\|Fortaleza\|1=Ana=3;2=Beto=4` | Beto achou o nº 4 (+4) e o placar |
+| servidor → todos | `ERRO\|2\|Beto\|aracaju` | o chute não está na lista |
+| servidor → todos | `PASSOU\|2\|Beto` | Beto passou a vez |
+| servidor → um | `DENOVO\|"aracaju" já foi chutado...` | chute repetido: o mesmo jogador tenta de novo |
+| servidor → todos | `FIM\|motivo\|1=São Paulo;2=Rio...\|placar` | fim, lista completa e placar |
 
-A variável **`vez`** existe nos dois lados: no servidor (dono da verdade) e em cada cliente,
-que a atualiza ao receber `RODADA`. O cliente compara `vez` com o próprio id para saber se é o capitão.
-O servidor ignora `RESP` de quem é capitão e `PALPITE` de quem não é.
+**A variável `vez`** existe nos dois processos, como o enunciado pede: o servidor guarda e passa
+para o próximo jogador a cada jogada; cada cliente atualiza a sua cópia quando chega `VEZ|...`
+e só pede o palpite se `vez == meu_id`. O servidor ignora mensagens de quem não está na vez.
 
 ## Memória compartilhada e exclusão mútua
-- O servidor cria **uma thread por jogador** (função `atender`) e a thread principal roda o jogo.
-- Todas compartilham o objeto `Estado` (vez, rodada, pontos, vidas, números sorteados, respostas, palpite).
-- Toda leitura/escrita nesse objeto acontece dentro de `with estado.lock` / `with estado.cond`
-  (**região crítica**), então duas threads nunca mexem nele ao mesmo tempo
-  (ex.: dois jogadores respondendo no mesmo instante).
-- A thread principal usa `estado.cond.wait_for(...)` para **dormir** até todos responderem;
-  cada thread de jogador, ao gravar a resposta, faz `notify_all()` para acordá-la.
-  Isso evita espera ocupada (loop gastando CPU).
-- Se um jogador desconecta, a thread dele marca `encerrado = True` e acorda a principal, que finaliza o jogo.
+- O servidor abre **uma thread por jogador** (função `atender`), e a thread principal conduz a partida.
+- Todas as threads usam a **mesma memória**: o objeto `Estado` (vez, itens achados, chutes errados,
+  pontos, a jogada recebida).
+- Todo acesso a essa memória fica dentro de `with estado.lock:` / `with estado.cond:` (**região crítica**):
+  só uma thread mexe nela por vez, então dois jogadores mandando mensagem ao mesmo tempo não
+  bagunçam os dados.
+- A thread principal espera a jogada com `estado.cond.wait_for(...)` (**dorme, sem gastar CPU**);
+  a thread do jogador grava a jogada e chama `notify_all()` para acordá-la.
+- Se alguém desconecta, a thread dele marca `encerrado = True` e a partida termina para todos.
+
+## Conferência com o enunciado
+| O que o trabalho pede | Onde está |
+|---|---|
+| Jogo para pelo menos 2 usuários | o servidor exige de 2 a 8 jogadores |
+| Comunicação entre processos por socket (cliente/servidor) | `socket` TCP em `servidor.py` e `cliente.py` |
+| Controle do jogo por códigos nas mensagens | códigos `VEZ`, `CHUTE`, `ACERTO`... (tabela acima) |
+| Variável "vez" nos dois processos, controlada por mensagens | `estado.vez` no servidor e `vez` no cliente |
+| Notação própria para as mensagens | `CODIGO\|campos`, com `;` e `=` para listas |
+| Memória compartilhada entre os usuários | objeto `Estado`, usado por todas as threads |
+| Exclusão mútua | `threading.Lock` e `threading.Condition` |
+| Linguagem permitida | Python (está na lista do enunciado) |
+| Não precisa de interface bonita | é só terminal |
 
 ## Respostas prontas para o formulário
 - **Nome do jogo:** Top 10
-- **Linguagem:** Python 3 (socket + threading)
-- **Explicação:** jogo cooperativo: a cada rodada um capitão; os outros recebem um número secreto de 1 a 10
-  e respondem um tema de acordo com a intensidade do número; o capitão tenta adivinhar os números.
-  10 temas, 5 vidas, o time soma pontos.
-- **Como e quais informações são trocadas:** via socket TCP, mensagens de texto `CODIGO|campos` (tabela acima):
-  nome, id, início de rodada com a vez/capitão e o tema, número secreto, respostas, palpite do capitão,
-  resultado e fim de jogo.
-- **Exclusão mútua:** o estado do jogo fica numa memória compartilhada entre as threads do servidor,
-  protegida por `threading.Lock`; uma `threading.Condition` faz a thread principal esperar as respostas
-  sem espera ocupada, e as threads dos jogadores a acordam com `notify_all()`.
+- **Linguagem:** Python 3 (`socket` e `threading`)
+- **Explicação:** jogo de adivinhar listas. Sai uma lista de 10 itens em ordem e os jogadores, um de cada vez,
+  chutam itens. Acertar o item nº X vale X pontos (o mais óbvio vale 1, o mais difícil vale 10). Errar passa a vez.
+  Vence quem somar mais pontos quando a lista acabar. São 10 listas (países, capitais, heróis, animes,
+  games, McDonald's, folclore, redes sociais, desenhos e clubes europeus).
+- **Como e quais informações são trocadas:** por socket TCP, cliente e servidor trocam linhas de texto
+  `CODIGO|campos`. O cliente manda o nickname (`NOME`), o palpite (`CHUTE`) ou que passou (`PASSA`).
+  O servidor manda a lista (`LISTA`), de quem é a vez (`VEZ`, com os itens já achados), o resultado de
+  cada chute (`ACERTO` com pontos e placar, `ERRO`, `PASSOU`, `DENOVO`) e o fim (`FIM`).
+  A variável `vez` existe no servidor e em cada cliente e é atualizada pela mensagem `VEZ`.
+- **Exclusão mútua:** o estado do jogo fica numa memória compartilhada entre as threads do servidor
+  (uma por jogador e a principal). Todo acesso a ela é feito dentro de um `threading.Lock`, então só uma
+  thread mexe por vez. Uma `threading.Condition` faz a thread principal dormir até chegar a jogada de
+  quem está na vez; a thread do jogador grava a jogada e a acorda com `notify_all()`.
