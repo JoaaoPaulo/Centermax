@@ -1,0 +1,62 @@
+# O que lançar no formulário (copiar e colar)
+
+## Nome dos alunos
+(os nomes de vocês dois)
+
+## Nome do jogo
+Top 10
+
+## Explicação sobre o jogo
+Top 10 é um jogo de adivinhar listas, jogado em rede pelo terminal por 2 a 8 jogadores. O servidor escolhe uma lista de 10 itens em ordem (por exemplo, "As 10 capitais brasileiras mais populosas") e os itens começam escondidos. Os jogadores, um de cada vez, dão um palpite. Se o palpite estiver na lista, o item aparece para todos e o jogador ganha a quantidade de pontos igual ao número do item: o nº 1 é o mais óbvio e vale 1 ponto, o nº 10 é o mais difícil e vale 10 pontos. Se errar, passa a vez sem pontos; também é possível passar a vez. Palpites repetidos não contam e o jogador tenta de novo. A partida termina quando os 10 itens são encontrados ou quando todos passam a vez seguidos, e vence quem somar mais pontos. O jogo tem 10 listas: países mais populosos, capitais brasileiras, super-heróis, animes, videogames, itens do McDonald's, lendas do folclore, redes sociais, desenhos animados e clubes europeus.
+
+## Linguagem de programação utilizada
+Python 3, com as bibliotecas padrão socket (comunicação) e threading (threads, Lock e Condition).
+
+## Como e quais informações são trocadas entre os processos?
+A comunicação é feita por socket TCP no modelo cliente/servidor: um processo servidor e um processo cliente para cada jogador. As mensagens são linhas de texto com uma notação própria: CODIGO|campo1|campo2|..., usando ";" para separar itens e "=" para separar valores.
+
+Do cliente para o servidor:
+- NOME|Ana: o jogador entra com o nickname.
+- CHUTE|fortaleza: o palpite de quem está na vez.
+- PASSA: o jogador passa a vez.
+- SAIR: o jogador sai da partida.
+
+Do servidor para os clientes:
+- BEMVINDO|1|2: informa o número do jogador (1) e quantos jogadores tem a partida (2).
+- LISTA|titulo|fonte|10: a lista da partida.
+- VEZ|2|Beto|1=São Paulo;6=Belo Horizonte: de quem é a vez e os itens já encontrados.
+- ACERTO|2|Beto|4|Fortaleza|1=Ana=3;2=Beto=4: quem acertou, qual item, os pontos e o placar.
+- ERRO|2|Beto|aracaju: o palpite não está na lista.
+- PASSOU|2|Beto: o jogador passou a vez.
+- DENOVO|mensagem: o palpite já tinha sido feito, o mesmo jogador tenta outro.
+- FIM|motivo|lista completa|placar: fim da partida.
+
+O controle da vez é feito pela variável inteira "vez", que existe nos dois processos: o servidor guarda e passa para o próximo jogador a cada jogada, e cada cliente atualiza a sua cópia quando recebe a mensagem VEZ. O cliente só pede o palpite quando "vez" é igual ao seu número, e o servidor ignora mensagens de quem não está na vez.
+
+## Como é feito o gerenciamento da exclusão mútua?
+O servidor cria uma thread para cada jogador conectado, que recebe as mensagens daquele jogador, e a thread principal conduz a partida. Todas essas threads acessam a mesma memória compartilhada: um objeto Estado com a vez, os itens encontrados, os chutes errados, os pontos e a jogada recebida. Todo acesso a essa memória é feito dentro de uma região crítica protegida por um threading.Lock (with estado.lock), garantindo que só uma thread leia ou altere os dados por vez; assim, mensagens de dois jogadores chegando ao mesmo tempo não corrompem o estado. Para a espera, é usada uma threading.Condition: a thread principal dorme em wait_for() até chegar a jogada de quem está na vez (sem espera ocupada, sem gastar CPU), e a thread do jogador grava a jogada na memória compartilhada e acorda a principal com notify_all(). Se um jogador desconectar, a thread dele marca o jogo como encerrado e acorda a principal, que finaliza a partida para todos.
+
+## Upload do código compactado (sem executável)
+Arquivo: Top10_sem_executavel.zip (já está pronto, mandei junto).
+
+## Upload do código compactado (com executável)
+Arquivo: Top10_com_executavel.zip (gerado no seu PC, veja o passo a passo abaixo).
+
+## Link para gameplay do jogo
+O link do vídeo no YouTube (como "Não listado") ou no Google Drive (com "qualquer pessoa com o link pode ver").
+
+---
+
+# Passo a passo (no PC com Windows)
+
+1. Instale o Python, se não tiver: https://www.python.org/downloads/ (na instalação, marque "Add Python to PATH").
+2. Extraia o Top10_sem_executavel.zip numa pasta.
+3. Dê dois cliques em gerar_executavel.bat. Espere terminar: vai aparecer o Top10_com_executavel.zip na pasta.
+4. Para gravar o vídeo: dê dois cliques em jogar.bat. Abrem 3 janelas (servidor e 2 jogadores).
+   - Em cada janela de jogador, digite um nickname.
+   - Na janela do servidor, digite 2 e Enter (lista das capitais) ou só Enter para sortear.
+   - Jogue alternando as janelas. Palpites bons para a lista 2: sp, rio, brasilia, fortaleza, salvador, bh, manaus, curitiba, recife, goiania. Erre um de propósito (ex.: aracaju) para mostrar o erro.
+5. Grave a tela com Win + Alt + R (gravador do Windows, Xbox Game Bar) ou pelo OBS. Uns 60 segundos bastam.
+6. Suba o vídeo no YouTube como "Não listado" e copie o link.
+7. Antes de enviar: confira na planilha se outra dupla não pegou "Top 10".
+8. Só um aluno da dupla envia, no formulário da SUA turma, até 15/11/2026 às 23:59.
