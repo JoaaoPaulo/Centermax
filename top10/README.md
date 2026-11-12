@@ -24,8 +24,6 @@ python cliente.py 127.0.0.1 5000
 Quando os dois entrarem, o servidor pergunta a lista (1 a 10, ou Enter para sortear).
 Para jogar em PCs diferentes na mesma rede, troque `127.0.0.1` pelo IP do PC do servidor.
 
-```bash
-
 ## Arquivos
 | Arquivo | O que faz |
 |---|---|
